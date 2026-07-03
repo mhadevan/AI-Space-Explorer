@@ -1,0 +1,1299 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0,user-scalable=no,maximum-scale=1.0,viewport-fit=cover">
+<meta name="theme-color" content="#0a0a2e">
+<meta name="description" content="AI Universe Explorer - Journey from AI to Agentic AI">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>🌌 AI Universe Explorer</title>
+<link rel="manifest" href='data:application/manifest+json,{"name":"AI Universe Explorer","short_name":"AI Explorer","start_url":".","display":"standalone","background_color":"#0a0a2e","theme_color":"#0a0a2e","icons":[]}'>
+<style>
+/* ===== RESET ===== */
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+:root{
+  --bg-deep:#050518;--bg-space:#0a0a2e;--bg-nebula:#1a0a3e;
+  --glass:rgba(255,255,255,0.08);--glass-border:rgba(255,255,255,0.15);
+  --glass-strong:rgba(255,255,255,0.14);
+  --accent-blue:#4fc3f7;--accent-purple:#b388ff;--accent-pink:#ff80ab;
+  --accent-gold:#ffd54f;--accent-green:#69f0ae;--accent-orange:#ffb74d;
+  --text-primary:#ffffff;--text-secondary:rgba(255,255,255,0.7);
+  --text-muted:rgba(255,255,255,0.45);
+  --radius:16px;--radius-lg:24px;
+  --font:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;
+  --safe-bottom:env(safe-area-inset-bottom,0px);
+}
+html,body{width:100%;height:100%;overflow:hidden;background:var(--bg-deep);color:var(--text-primary);font-family:var(--font);-webkit-font-smoothing:antialiased;user-select:none;-webkit-user-select:none}
+body{position:fixed;inset:0;touch-action:manipulation}
+
+/* ===== CANVAS ===== */
+#starfield{position:fixed;inset:0;z-index:0;pointer-events:none}
+#fxCanvas{position:fixed;inset:0;z-index:50;pointer-events:none}
+
+/* ===== NEBULA ===== */
+.nebula-bg{position:fixed;inset:0;z-index:1;pointer-events:none;overflow:hidden}
+.nebula{position:absolute;border-radius:50%;filter:blur(80px);opacity:0.3;animation:nebulaDrift 25s ease-in-out infinite alternate}
+.nebula.n1{width:400px;height:400px;background:radial-gradient(circle,#4fc3f7,transparent 70%);top:10%;left:5%}
+.nebula.n2{width:350px;height:350px;background:radial-gradient(circle,#b388ff,transparent 70%);bottom:15%;right:8%;animation-delay:-8s}
+.nebula.n3{width:300px;height:300px;background:radial-gradient(circle,#ff80ab,transparent 70%);top:50%;left:40%;animation-delay:-15s}
+
+/* ===== SCREENS ===== */
+.screen{position:fixed;inset:0;z-index:10;display:none;flex-direction:column;align-items:center;justify-content:center;padding:20px;opacity:0;transition:opacity .6s ease}
+.screen.active{display:flex;opacity:1}
+
+/* ===== INTRO ===== */
+#introScreen{background:radial-gradient(ellipse at center,rgba(10,10,46,.3) 0%,rgba(5,5,24,.6) 100%)}
+.intro-content{text-align:center;z-index:5;animation:introFadeUp 1.2s ease}
+.intro-title{font-size:clamp(2rem,7vw,3.5rem);font-weight:800;letter-spacing:-1px;background:linear-gradient(135deg,#4fc3f7,#b388ff,#ff80ab);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;text-shadow:0 0 60px rgba(79,195,247,.3);margin-bottom:8px;animation:titleGlow 3s ease-in-out infinite}
+.intro-subtitle{font-size:clamp(.85rem,3.5vw,1.1rem);color:var(--text-secondary);font-weight:300;margin-bottom:40px;letter-spacing:.5px}
+.start-btn{position:relative;padding:18px 48px;font-size:1.15rem;font-weight:700;color:#fff;background:linear-gradient(135deg,#4fc3f7,#b388ff);border:none;border-radius:50px;cursor:pointer;overflow:hidden;box-shadow:0 0 40px rgba(79,195,247,.5),0 8px 32px rgba(0,0,0,.3);transition:transform .2s,box-shadow .3s;animation:startBtnPulse 2.5s ease-in-out infinite}
+.start-btn:active{transform:scale(.95)}
+.start-btn::after{content:'';position:absolute;inset:0;background:linear-gradient(135deg,transparent,rgba(255,255,255,.2),transparent);transform:translateX(-100%);animation:btnShine 3s infinite}
+
+/* ===== HUD ===== */
+#hud{position:fixed;top:0;left:0;right:0;z-index:20;padding:10px 12px;padding-top:max(10px,env(safe-area-inset-top));display:none;align-items:center;justify-content:space-between;pointer-events:none}
+#hud.show{display:flex}
+.hud-left,.hud-right{display:flex;align-items:center;gap:8px;pointer-events:auto}
+.hud-pill{background:var(--glass);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border:1px solid var(--glass-border);border-radius:20px;padding:6px 12px;font-size:.72rem;font-weight:600;display:flex;align-items:center;gap:5px;white-space:nowrap}
+.hud-pill .icon{font-size:.85rem}
+.xp-pill{color:var(--accent-gold)}
+.progress-pill{color:var(--accent-blue)}
+.hud-btn{background:var(--glass);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border:1px solid var(--glass-border);border-radius:50%;width:36px;height:36px;display:flex;align-items:center;justify-content:center;font-size:1rem;cursor:pointer;pointer-events:auto;transition:transform .2s}
+.hud-btn:active{transform:scale(.9)}
+
+/* ===== UNIVERSE VIEW ===== */
+#universeView{z-index:5;padding-bottom:140px}
+.universe-container{position:relative;width:100%;height:100%;display:flex;align-items:center;justify-content:center;overflow:visible}
+.orbit-system{position:relative;transform-style:preserve-3d}
+
+/* SUN */
+.sun-wrapper{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);z-index:15;cursor:pointer}
+.sun{width:clamp(50px,12vw,80px);height:clamp(50px,12vw,80px);border-radius:50%;background:radial-gradient(circle at 35% 35%,#fff9c4,#ffb74d,#ff6f00);box-shadow:0 0 30px #ffb74d,0 0 60px #ff6f00,0 0 100px rgba(255,111,0,.5),inset -10px -10px 25px rgba(255,111,0,.3);animation:sunPulse 3s ease-in-out infinite;position:relative}
+.sun::before{content:'';position:absolute;inset:-10px;border-radius:50%;background:radial-gradient(circle,rgba(255,183,77,.3),transparent 70%);animation:sunCorona 4s ease-in-out infinite}
+.sun-label{position:absolute;top:50%;left:calc(100% + 10px);transform:translateY(-50%);white-space:nowrap;font-size:.65rem;font-weight:700;color:var(--accent-gold);text-shadow:0 0 10px rgba(255,213,79,.5);pointer-events:none}
+
+/* ORBITS */
+.orbit-ring{position:absolute;top:50%;left:50%;border:1px solid rgba(255,255,255,.05);border-radius:50%;transform:translate(-50%,-50%);pointer-events:none}
+
+/* PLANETS - orbiting */
+.planet-wrapper{position:absolute;top:50%;left:50%;z-index:12;pointer-events:none}
+.planet-orbit{position:absolute;top:0;left:0;animation:orbitSpin linear infinite;transform-origin:0 0;pointer-events:none}
+.planet-hitbox{position:absolute;cursor:pointer;pointer-events:auto;transition:transform .3s ease;padding:12px;margin:-12px;display:flex;flex-direction:column;align-items:center}
+.planet-hitbox:active{transform:scale(.9)}
+.planet-sphere{border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:clamp(1rem,3vw,1.5rem);position:relative;transition:all .3s;pointer-events:none}
+.planet-sphere::before{content:'';position:absolute;inset:-6px;border-radius:50%;opacity:0;transition:opacity .3s;pointer-events:none}
+.planet-hitbox.current .planet-sphere::before{opacity:1;animation:currentPulse 1.5s ease-in-out infinite}
+.planet-sphere.locked{filter:grayscale(.7) brightness(.4)}
+.planet-label{margin-top:5px;white-space:nowrap;font-size:.58rem;font-weight:600;color:var(--text-secondary);text-shadow:0 1px 4px rgba(0,0,0,.8);pointer-events:none;opacity:.65;transition:opacity .3s}
+.planet-hitbox.current .planet-label{opacity:1;color:var(--accent-blue)}
+.planet-lock{position:absolute;top:-2px;right:-2px;font-size:.65rem;filter:drop-shadow(0 0 4px rgba(0,0,0,.8));pointer-events:none}
+.planet-complete-badge{position:absolute;top:-4px;right:-4px;width:16px;height:16px;background:var(--accent-green);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.5rem;color:#000;font-weight:bold;box-shadow:0 0 8px rgba(105,240,174,.6);pointer-events:none}
+
+/* PLANET COLORS */
+.p-ai .planet-sphere{width:clamp(36px,9vw,56px);height:clamp(36px,9vw,56px);background:radial-gradient(circle at 35% 35%,#fff9c4,#ffd54f,#ff9800);box-shadow:0 0 15px rgba(255,213,79,.4)}
+.p-ml .planet-sphere{width:clamp(34px,8.5vw,50px);height:clamp(34px,8.5vw,50px);background:radial-gradient(circle at 35% 35%,#b3e5fc,#4fc3f7,#0277bd);box-shadow:0 0 15px rgba(79,195,247,.4)}
+.p-dl .planet-sphere{width:clamp(32px,8vw,46px);height:clamp(32px,8vw,46px);background:radial-gradient(circle at 35% 35%,#d1c4e9,#b388ff,#5e35b1);box-shadow:0 0 15px rgba(179,136,255,.4)}
+.p-gen .planet-sphere{width:clamp(30px,7.5vw,42px);height:clamp(30px,7.5vw,42px);background:radial-gradient(circle at 35% 35%,#f8bbd0,#ff80ab,#c2185b);box-shadow:0 0 15px rgba(255,128,171,.4)}
+.p-llm .planet-sphere{width:clamp(28px,7vw,40px);height:clamp(28px,7vw,40px);background:radial-gradient(circle at 35% 35%,#a5d6a7,#66bb6a,#2e7d32);box-shadow:0 0 15px rgba(102,187,106,.4)}
+.p-rag .planet-sphere{width:clamp(26px,6.5vw,38px);height:clamp(26px,6.5vw,38px);background:radial-gradient(circle at 35% 35%,#ffccbc,#ff7043,#bf360c);box-shadow:0 0 15px rgba(255,112,67,.4)}
+.p-agent .planet-sphere{width:clamp(24px,6vw,36px);height:clamp(24px,6vw,36px);background:radial-gradient(circle at 35% 35%,#ce93d8,#ab47bc,#6a1b9a);box-shadow:0 0 20px rgba(171,71,188,.5);animation:agentGlow 2s ease-in-out infinite}
+.planet-sphere::before{background:radial-gradient(circle,rgba(255,255,255,.25),transparent 70%)}
+
+/* LOCKED PLANETS (hidden) */
+.locked-planet{position:absolute;top:50%;left:50%;cursor:pointer;opacity:.4;transition:opacity .3s;pointer-events:auto}
+.locked-planet:active{transform:scale(.9)}
+.locked-sphere{width:clamp(18px,4.5vw,28px);height:clamp(18px,4.5vw,28px);border-radius:50%;background:radial-gradient(circle at 35% 35%,#555,#333,#111);border:1px dashed rgba(255,255,255,.12);display:flex;align-items:center;justify-content:center;font-size:.65rem;filter:grayscale(.5)}
+.locked-label{margin-top:3px;white-space:nowrap;font-size:.5rem;color:var(--text-muted);pointer-events:none}
+
+/* ===== MISSION BAR (Bottom planet selector) ===== */
+#missionBar{position:fixed;bottom:0;left:0;right:0;z-index:25;padding:10px 12px calc(10px + var(--safe-bottom));background:linear-gradient(to top,rgba(5,5,24,.95) 40%,rgba(5,5,24,.7) 70%,transparent 100%);display:none;flex-direction:column;align-items:center;gap:8px}
+#missionBar.show{display:flex}
+.mission-next-hint{font-size:.7rem;color:var(--accent-blue);font-weight:600;text-align:center;animation:hintPulse 2s ease-in-out infinite;letter-spacing:.5px}
+.mission-scroll{display:flex;gap:8px;overflow-x:auto;scroll-behavior:smooth;-ms-overflow-style:none;scrollbar-width:none;padding:4px 8px;max-width:100%;width:100%;justify-content:center}
+.mission-scroll::-webkit-scrollbar{display:none}
+.mission-item{flex-shrink:0;display:flex;flex-direction:column;align-items:center;gap:4px;cursor:pointer;transition:transform .2s;padding:6px 4px;border-radius:12px;min-width:52px}
+.mission-item:active{transform:scale(.92)}
+.mission-item.current{background:rgba(79,195,247,.1);border:1px solid rgba(79,195,247,.25)}
+.mission-item.completed{opacity:.7}
+.mission-item.locked{opacity:.4}
+.mission-item-icon{width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:1.1rem;position:relative;transition:all .3s}
+.mission-item.current .mission-item-icon{box-shadow:0 0 15px rgba(79,195,247,.5);animation:currentPulse 1.5s ease-in-out infinite}
+.mission-item.completed .mission-item-icon::after{content:'✓';position:absolute;bottom:-2px;right:-2px;width:14px;height:14px;background:var(--accent-green);border-radius:50%;font-size:.5rem;color:#000;font-weight:bold;display:flex;align-items:center;justify-content:center}
+.mission-item.locked .mission-item-icon{filter:grayscale(.8) brightness(.5)}
+.mission-item.locked .mission-item-icon::after{content:'🔒';position:absolute;font-size:.5rem;bottom:-1px;right:-1px}
+.mission-item-name{font-size:.52rem;font-weight:600;color:var(--text-secondary);text-align:center;white-space:nowrap;max-width:60px;overflow:hidden;text-overflow:ellipsis}
+.mission-item.current .mission-item-name{color:var(--accent-blue)}
+.mission-connector{position:absolute;top:50%;left:0;right:0;height:2px;background:linear-gradient(to right,transparent,rgba(255,255,255,.08),transparent);z-index:-1;pointer-events:none}
+
+/* ===== PLANET POPUP ===== */
+#planetPopup{position:fixed;inset:0;z-index:40;display:none;align-items:center;justify-content:center;padding:20px;background:rgba(5,5,24,.7);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);opacity:0;transition:opacity .4s}
+#planetPopup.show{display:flex;opacity:1}
+.popup-card{background:var(--glass-strong);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border:1px solid var(--glass-border);border-radius:var(--radius-lg);max-width:440px;width:100%;max-height:80vh;overflow-y:auto;padding:28px 22px;position:relative;box-shadow:0 20px 60px rgba(0,0,0,.5),inset 0 1px 0 rgba(255,255,255,.1);animation:popupRise .5s cubic-bezier(.34,1.56,.64,1)}
+.popup-close{position:absolute;top:12px;right:12px;width:30px;height:30px;border-radius:50%;background:rgba(255,255,255,.1);border:none;color:#fff;font-size:1rem;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:transform .2s;z-index:2}
+.popup-close:active{transform:scale(.9) rotate(90deg)}
+.popup-icon{font-size:2.5rem;text-align:center;margin-bottom:6px;animation:iconFloat 2s ease-in-out infinite}
+.popup-title{font-size:1.3rem;font-weight:800;text-align:center;margin-bottom:2px;background:linear-gradient(135deg,#4fc3f7,#b388ff);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
+.popup-subtitle{font-size:.7rem;color:var(--text-muted);text-align:center;margin-bottom:14px;letter-spacing:1px;text-transform:uppercase}
+.popup-section{margin-bottom:14px}
+.popup-section-title{font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--accent-blue);margin-bottom:6px;display:flex;align-items:center;gap:5px}
+.popup-desc{font-size:.82rem;line-height:1.55;color:var(--text-secondary)}
+.popup-examples{display:flex;flex-wrap:wrap;gap:6px}
+.example-chip{background:rgba(79,195,247,.12);border:1px solid rgba(79,195,247,.2);border-radius:20px;padding:4px 10px;font-size:.72rem;color:var(--accent-blue);animation:chipAppear .4s ease backwards}
+.popup-facts{background:rgba(179,136,255,.08);border-left:3px solid var(--accent-purple);border-radius:8px;padding:8px 12px;font-size:.76rem;line-height:1.45;color:var(--text-secondary)}
+.popup-facts strong{color:var(--accent-purple)}
+.popup-continue-btn{width:100%;padding:13px;font-size:.95rem;font-weight:700;color:#fff;background:linear-gradient(135deg,#4fc3f7,#b388ff);border:none;border-radius:14px;cursor:pointer;box-shadow:0 4px 20px rgba(79,195,247,.3);transition:transform .2s;margin-top:4px}
+.popup-continue-btn:active{transform:scale(.97)}
+.popup-continue-btn.locked{background:linear-gradient(135deg,#555,#333);box-shadow:none;opacity:.6}
+
+/* ===== QUIZ ===== */
+#quizModal{position:fixed;inset:0;z-index:45;display:none;align-items:center;justify-content:center;padding:20px;background:rgba(5,5,24,.85);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);opacity:0;transition:opacity .4s}
+#quizModal.show{display:flex;opacity:1}
+.quiz-card{background:var(--glass-strong);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border:1px solid var(--glass-border);border-radius:var(--radius-lg);max-width:420px;width:100%;padding:26px 22px;box-shadow:0 20px 60px rgba(0,0,0,.5);animation:popupRise .5s cubic-bezier(.34,1.56,.64,1)}
+.quiz-header{text-align:center;margin-bottom:18px}
+.quiz-planet-icon{font-size:1.8rem;margin-bottom:4px}
+.quiz-title{font-size:1.05rem;font-weight:700}
+.quiz-subtitle{font-size:.65rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:1px;margin-top:3px}
+.quiz-question{font-size:.9rem;line-height:1.5;margin-bottom:16px;text-align:center;font-weight:500}
+.quiz-options{display:flex;flex-direction:column;gap:9px}
+.quiz-option{background:rgba(255,255,255,.06);border:1.5px solid rgba(255,255,255,.1);border-radius:14px;padding:13px 14px;font-size:.82rem;color:var(--text-secondary);cursor:pointer;transition:all .25s;display:flex;align-items:center;gap:10px;text-align:left;font-family:var(--font)}
+.quiz-option:active{transform:scale(.97)}
+.quiz-option .opt-letter{width:26px;height:26px;border-radius:50%;background:rgba(255,255,255,.1);display:flex;align-items:center;justify-content:center;font-size:.75rem;font-weight:700;flex-shrink:0;color:var(--text-primary)}
+.quiz-option.correct{background:rgba(105,240,174,.15);border-color:var(--accent-green);color:var(--accent-green)}
+.quiz-option.correct .opt-letter{background:var(--accent-green);color:#000}
+.quiz-option.wrong{background:rgba(255,128,171,.15);border-color:var(--accent-pink);color:var(--accent-pink)}
+.quiz-option.wrong .opt-letter{background:var(--accent-pink);color:#fff}
+.quiz-option.disabled{pointer-events:none;opacity:.5}
+.quiz-option.disabled.correct,.quiz-option.disabled.wrong{opacity:1}
+.quiz-feedback{text-align:center;margin-top:14px;font-size:.82rem;min-height:22px;font-weight:600;opacity:0;transition:opacity .3s}
+.quiz-feedback.show{opacity:1}
+.quiz-feedback.correct{color:var(--accent-green)}
+.quiz-feedback.wrong{color:var(--accent-pink)}
+.quiz-next-btn{width:100%;padding:12px;font-size:.92rem;font-weight:700;color:#fff;background:linear-gradient(135deg,#69f0ae,#4fc3f7);border:none;border-radius:14px;cursor:pointer;margin-top:12px;transition:transform .2s;display:none}
+.quiz-next-btn.show{display:block;animation:btnSlideUp .3s ease}
+.quiz-next-btn:active{transform:scale(.97)}
+
+/* ===== ACHIEVEMENTS ===== */
+#achievementsPanel{position:fixed;inset:0;z-index:42;display:none;align-items:center;justify-content:center;padding:20px;background:rgba(5,5,24,.8);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);opacity:0;transition:opacity .4s}
+#achievementsPanel.show{display:flex;opacity:1}
+.ach-card{background:var(--glass-strong);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border:1px solid var(--glass-border);border-radius:var(--radius-lg);max-width:380px;width:100%;padding:22px;box-shadow:0 20px 60px rgba(0,0,0,.5);animation:popupRise .4s ease}
+.ach-card h2{font-size:1.15rem;font-weight:800;text-align:center;margin-bottom:14px;background:linear-gradient(135deg,#ffd54f,#ff80ab);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
+.ach-list{display:flex;flex-direction:column;gap:8px}
+.ach-item{display:flex;align-items:center;gap:10px;padding:10px;border-radius:12px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.06);transition:all .3s}
+.ach-item.unlocked{background:rgba(255,213,79,.08);border-color:rgba(255,213,79,.2)}
+.ach-badge{width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:1.1rem;flex-shrink:0;background:rgba(255,255,255,.06);filter:grayscale(1);opacity:.4;transition:all .3s}
+.ach-item.unlocked .ach-badge{filter:none;opacity:1;animation:badgePop .5s ease}
+.ach-info{flex:1}
+.ach-name{font-size:.82rem;font-weight:700}
+.ach-desc{font-size:.68rem;color:var(--text-muted);margin-top:2px}
+.ach-close-btn{width:100%;padding:11px;font-size:.88rem;font-weight:600;color:#fff;background:rgba(255,255,255,.08);border:1px solid var(--glass-border);border-radius:12px;cursor:pointer;margin-top:14px;transition:transform .2s}
+.ach-close-btn:active{transform:scale(.97)}
+
+/* ===== ACHIEVEMENT TOAST ===== */
+#achToast{position:fixed;top:70px;left:50%;transform:translateX(-50%) translateY(-100px);z-index:60;background:var(--glass-strong);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border:1px solid rgba(255,213,79,.3);border-radius:16px;padding:10px 18px;display:flex;align-items:center;gap:10px;box-shadow:0 10px 40px rgba(0,0,0,.4);opacity:0;transition:all .5s cubic-bezier(.34,1.56,.64,1);pointer-events:none}
+#achToast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+.ach-toast-badge{font-size:1.6rem;animation:badgePop .5s ease}
+.ach-toast-text{display:flex;flex-direction:column}
+.ach-toast-label{font-size:.55rem;text-transform:uppercase;letter-spacing:1px;color:var(--accent-gold)}
+.ach-toast-name{font-size:.85rem;font-weight:700}
+
+/* ===== NAME MODAL ===== */
+#nameModal{position:fixed;inset:0;z-index:48;display:none;align-items:center;justify-content:center;padding:20px;background:rgba(5,5,24,.8);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);opacity:0;transition:opacity .4s}
+#nameModal.show{display:flex;opacity:1}
+.name-card{background:var(--glass-strong);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border:1px solid var(--glass-border);border-radius:var(--radius-lg);max-width:340px;width:100%;padding:26px 22px;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,.5);animation:popupRise .5s ease}
+.name-card h2{font-size:1.15rem;font-weight:800;margin-bottom:4px}
+.name-card p{font-size:.78rem;color:var(--text-secondary);margin-bottom:16px}
+.name-input{width:100%;padding:13px 15px;font-size:1rem;background:rgba(255,255,255,.06);border:1.5px solid rgba(255,255,255,.1);border-radius:12px;color:#fff;font-family:var(--font);margin-bottom:12px;outline:none;transition:border-color .3s}
+.name-input:focus{border-color:var(--accent-blue)}
+.name-input::placeholder{color:var(--text-muted)}
+.name-btn{width:100%;padding:13px;font-size:.95rem;font-weight:700;color:#fff;background:linear-gradient(135deg,#4fc3f7,#b388ff);border:none;border-radius:14px;cursor:pointer;transition:transform .2s}
+.name-btn:active{transform:scale(.97)}
+
+/* ===== FINAL MISSION ===== */
+#finalMission{position:fixed;inset:0;z-index:44;display:none;flex-direction:column;align-items:center;justify-content:center;padding:20px;background:radial-gradient(ellipse at center,rgba(26,10,62,.5),rgba(5,5,24,.9));opacity:0;transition:opacity .6s}
+#finalMission.show{display:flex;opacity:1}
+.final-content{max-width:440px;width:100%;text-align:center}
+.final-title{font-size:1.5rem;font-weight:800;background:linear-gradient(135deg,#ffd54f,#ff80ab,#b388ff);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;margin-bottom:4px;animation:titleGlow 2s ease-in-out infinite}
+.final-subtitle{font-size:.78rem;color:var(--text-secondary);margin-bottom:18px}
+.final-progress{display:flex;gap:6px;justify-content:center;margin-bottom:18px}
+.final-dot{width:10px;height:10px;border-radius:50%;background:rgba(255,255,255,.15);transition:all .3s}
+.final-dot.active{background:var(--accent-blue);box-shadow:0 0 10px var(--accent-blue);transform:scale(1.3)}
+.final-dot.correct{background:var(--accent-green)}
+.final-dot.wrong{background:var(--accent-pink)}
+.final-q{font-size:.95rem;font-weight:600;margin-bottom:16px;line-height:1.5}
+.final-options{display:flex;flex-direction:column;gap:9px}
+.final-opt{background:rgba(255,255,255,.06);border:1.5px solid rgba(255,255,255,.1);border-radius:14px;padding:13px;font-size:.82rem;color:var(--text-secondary);cursor:pointer;transition:all .25s;text-align:left}
+.final-opt:active{transform:scale(.97)}
+.final-opt.correct{background:rgba(105,240,174,.15);border-color:var(--accent-green);color:var(--accent-green)}
+.final-opt.wrong{background:rgba(255,128,171,.15);border-color:var(--accent-pink);color:var(--accent-pink)}
+
+/* ===== CELEBRATION ===== */
+#celebrationScreen{position:fixed;inset:0;z-index:46;display:none;flex-direction:column;align-items:center;justify-content:center;padding:20px;background:radial-gradient(ellipse at center,rgba(26,10,62,.3),rgba(5,5,24,.8));opacity:0;transition:opacity .8s;overflow-y:auto}
+#celebrationScreen.show{display:flex;opacity:1}
+.celebration-content{max-width:400px;width:100%;text-align:center;padding:20px 0}
+.celeb-trophy{font-size:3rem;animation:trophyBounce 1s ease infinite}
+.celeb-title{font-size:1.4rem;font-weight:800;background:linear-gradient(135deg,#ffd54f,#ff80ab);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;margin:6px 0}
+.celeb-subtitle{font-size:.8rem;color:var(--text-secondary);margin-bottom:18px}
+.score-card{background:var(--glass-strong);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border:1px solid var(--glass-border);border-radius:var(--radius-lg);padding:20px 18px;margin-bottom:18px;box-shadow:0 10px 40px rgba(0,0,0,.3)}
+.score-stars{font-size:1.6rem;letter-spacing:3px;margin-bottom:10px;filter:drop-shadow(0 0 8px rgba(255,213,79,.5))}
+.score-stats{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.stat-item{background:rgba(255,255,255,.04);border-radius:12px;padding:10px 8px}
+.stat-label{font-size:.55rem;text-transform:uppercase;letter-spacing:1px;color:var(--text-muted);margin-bottom:3px}
+.stat-value{font-size:1.05rem;font-weight:800}
+.stat-value.gold{color:var(--accent-gold)}
+.stat-value.blue{color:var(--accent-blue)}
+.stat-value.green{color:var(--accent-green)}
+.stat-value.purple{color:var(--accent-purple)}
+.rank-badge{margin-top:14px;padding:9px;border-radius:12px;background:linear-gradient(135deg,rgba(255,213,79,.15),rgba(255,128,171,.15));border:1px solid rgba(255,213,79,.2);font-size:.85rem;font-weight:700;color:var(--accent-gold)}
+.share-section{display:flex;flex-direction:column;gap:8px}
+.share-btn{padding:12px;font-size:.88rem;font-weight:700;border:none;border-radius:14px;cursor:pointer;transition:transform .2s;display:flex;align-items:center;justify-content:center;gap:8px}
+.share-btn:active{transform:scale(.97)}
+.share-whatsapp{background:#25D366;color:#fff}
+.share-linkedin{background:#0077B5;color:#fff}
+.share-copy{background:rgba(255,255,255,.08);color:#fff;border:1px solid var(--glass-border)}
+.share-cert{background:linear-gradient(135deg,#ffd54f,#ff9800);color:#1a1a2e}
+.share-play{background:linear-gradient(135deg,#4fc3f7,#b388ff);color:#fff}
+.challenge-text{font-size:.72rem;color:var(--text-muted);margin-top:10px;font-style:italic}
+
+/* ===== CERTIFICATE ===== */
+#certModal{position:fixed;inset:0;z-index:55;display:none;align-items:center;justify-content:center;padding:20px;background:rgba(5,5,24,.9);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);opacity:0;transition:opacity .5s;overflow-y:auto}
+#certModal.show{display:flex;opacity:1}
+.cert-container{max-width:400px;width:100%;text-align:center}
+#certCanvas{width:100%;max-width:380px;border-radius:12px;box-shadow:0 10px 40px rgba(0,0,0,.5);animation:popupRise .6s ease}
+.cert-buttons{display:flex;gap:8px;margin-top:14px;justify-content:center;flex-wrap:wrap}
+.cert-btn{padding:10px 18px;font-size:.82rem;font-weight:700;border:none;border-radius:12px;cursor:pointer;transition:transform .2s}
+.cert-btn:active{transform:scale(.95)}
+.cert-download{background:linear-gradient(135deg,#4fc3f7,#b388ff);color:#fff}
+.cert-close{background:rgba(255,255,255,.08);color:#fff;border:1px solid var(--glass-border)}
+
+/* ===== EASTER EGG ===== */
+#easterEggToast{position:fixed;bottom:150px;left:50%;transform:translateX(-50%) translateY(120px);z-index:55;background:var(--glass-strong);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border:1px solid rgba(179,136,255,.3);border-radius:16px;padding:12px 18px;max-width:320px;box-shadow:0 10px 40px rgba(0,0,0,.4);opacity:0;transition:all .5s cubic-bezier(.34,1.56,.64,1);pointer-events:none}
+#easterEggToast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+.ee-icon{font-size:1.3rem;margin-bottom:2px}
+.ee-label{font-size:.55rem;text-transform:uppercase;letter-spacing:1px;color:var(--accent-purple);margin-bottom:3px}
+.ee-fact{font-size:.76rem;color:var(--text-secondary);line-height:1.4}
+
+/* ===== LOADING ===== */
+#loadingScreen{position:fixed;inset:0;z-index:100;display:flex;align-items:center;justify-content:center;background:var(--bg-deep);flex-direction:column;gap:14px;transition:opacity .5s}
+#loadingScreen.hide{opacity:0;pointer-events:none}
+.loader{width:44px;height:44px;border:3px solid rgba(255,255,255,.1);border-top-color:var(--accent-blue);border-radius:50%;animation:spin .8s linear infinite}
+.loader-text{font-size:.75rem;color:var(--text-muted);letter-spacing:2px}
+
+/* ===== ANIMATIONS ===== */
+@keyframes spin{to{transform:rotate(360deg)}}
+@keyframes introFadeUp{from{opacity:0;transform:translateY(30px)}to{opacity:1;transform:translateY(0)}}
+@keyframes titleGlow{0%,100%{filter:drop-shadow(0 0 20px rgba(79,195,247,.3))}50%{filter:drop-shadow(0 0 40px rgba(179,136,255,.5))}}
+@keyframes startBtnPulse{0%,100%{box-shadow:0 0 40px rgba(79,195,247,.5),0 8px 32px rgba(0,0,0,.3)}50%{box-shadow:0 0 60px rgba(79,195,247,.7),0 8px 32px rgba(0,0,0,.3)}}
+@keyframes btnShine{0%{transform:translateX(-100%)}50%,100%{transform:translateX(100%)}}
+@keyframes nebulaDrift{from{transform:translate(0,0) scale(1)}to{transform:translate(30px,-20px) scale(1.1)}}
+@keyframes sunPulse{0%,100%{transform:scale(1);box-shadow:0 0 30px #ffb74d,0 0 60px #ff6f00,0 0 100px rgba(255,111,0,.5),inset -10px -10px 25px rgba(255,111,0,.3)}50%{transform:scale(1.05);box-shadow:0 0 40px #ffb74d,0 0 80px #ff6f00,0 0 120px rgba(255,111,0,.6),inset -10px -10px 25px rgba(255,111,0,.3)}}
+@keyframes sunCorona{0%,100%{transform:scale(1);opacity:.3}50%{transform:scale(1.3);opacity:.5}}
+@keyframes orbitSpin{from{transform:rotate(0deg) translateX(var(--orbit-r)) rotate(0deg)}to{transform:rotate(360deg) translateX(var(--orbit-r)) rotate(-360deg)}}
+@keyframes agentGlow{0%,100%{box-shadow:0 0 20px rgba(171,71,188,.5)}50%{box-shadow:0 0 40px rgba(171,71,188,.8)}}
+@keyframes popupRise{from{opacity:0;transform:translateY(40px) scale(.9)}to{opacity:1;transform:translateY(0) scale(1)}}
+@keyframes iconFloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
+@keyframes chipAppear{from{opacity:0;transform:scale(.8)}to{opacity:1;transform:scale(1)}}
+@keyframes btnSlideUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+@keyframes badgePop{0%{transform:scale(0)}60%{transform:scale(1.3)}100%{transform:scale(1)}}
+@keyframes trophyBounce{0%,100%{transform:translateY(0)}50%{transform:translateY(-10px)}}
+@keyframes currentPulse{0%,100%{opacity:.5;transform:scale(1)}50%{opacity:1;transform:scale(1.15)}}
+@keyframes hintPulse{0%,100%{opacity:.6}50%{opacity:1}}
+
+::-webkit-scrollbar{width:4px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:rgba(255,255,255,.15);border-radius:4px}
+
+@media(max-width:380px){
+  .hud-pill{font-size:.65rem;padding:5px 9px}
+  .hud-btn{width:32px;height:32px;font-size:.9rem}
+  .mission-item{min-width:46px}
+  .mission-item-icon{width:32px;height:32px;font-size:1rem}
+}
+@media(min-width:768px){
+  .popup-card,.quiz-card{max-width:460px}
+}
+</style>
+</head>
+<body>
+
+<!-- LOADING -->
+<div id="loadingScreen"><div class="loader"></div><div class="loader-text">LOADING UNIVERSE...</div></div>
+
+<!-- CANVAS -->
+<canvas id="starfield"></canvas>
+<canvas id="fxCanvas"></canvas>
+
+<!-- NEBULA -->
+<div class="nebula-bg"><div class="nebula n1"></div><div class="nebula n2"></div><div class="nebula n3"></div></div>
+
+<!-- INTRO -->
+<div id="introScreen" class="screen active">
+  <div class="intro-content">
+    <h1 class="intro-title">🌌 AI Universe Explorer</h1>
+    <p class="intro-subtitle">Explore the Evolution of Artificial Intelligence</p>
+    <button class="start-btn" id="startBtn">🚀 Start Mission</button>
+  </div>
+</div>
+
+<!-- HUD -->
+<div id="hud">
+  <div class="hud-left">
+    <div class="hud-pill xp-pill"><span class="icon">⭐</span><span id="hudXP">0 XP</span></div>
+    <div class="hud-pill progress-pill"><span class="icon">🪐</span><span id="hudProgress">0/7</span></div>
+  </div>
+  <div class="hud-right">
+    <div class="hud-btn" id="achBtn">🏅</div>
+    <div class="hud-btn" id="musicBtn">🔇</div>
+  </div>
+</div>
+
+<!-- UNIVERSE -->
+<div id="universeView" class="screen">
+  <div class="universe-container"><div class="orbit-system" id="orbitSystem"></div></div>
+</div>
+
+<!-- MISSION BAR (bottom planet selector) -->
+<div id="missionBar">
+  <div class="mission-next-hint" id="missionHint">👆 Tap Artificial Intelligence to begin</div>
+  <div class="mission-scroll" id="missionScroll"></div>
+</div>
+
+<!-- PLANET POPUP -->
+<div id="planetPopup">
+  <div class="popup-card">
+    <button class="popup-close" id="popupClose">✕</button>
+    <div class="popup-icon" id="popupIcon">📊</div>
+    <h2 class="popup-title" id="popupTitle">Planet</h2>
+    <p class="popup-subtitle" id="popupSubtitle">Concept</p>
+    <div class="popup-section">
+      <div class="popup-section-title">📖 Overview</div>
+      <p class="popup-desc" id="popupDesc"></p>
+    </div>
+    <div class="popup-section">
+      <div class="popup-section-title">💡 Real-World Applications</div>
+      <div class="popup-examples" id="popupExamples"></div>
+    </div>
+    <div class="popup-section">
+      <div class="popup-section-title">🤔 Did You Know?</div>
+      <div class="popup-facts" id="popupFacts"></div>
+    </div>
+    <button class="popup-continue-btn" id="popupContinue">Start Quiz 🧠</button>
+  </div>
+</div>
+
+<!-- QUIZ -->
+<div id="quizModal">
+  <div class="quiz-card">
+    <div class="quiz-header">
+      <div class="quiz-planet-icon" id="quizIcon">📊</div>
+      <div class="quiz-title" id="quizTitle">Quiz</div>
+      <div class="quiz-subtitle">Test Your Knowledge</div>
+    </div>
+    <div class="quiz-question" id="quizQuestion"></div>
+    <div class="quiz-options" id="quizOptions"></div>
+    <div class="quiz-feedback" id="quizFeedback"></div>
+    <button class="quiz-next-btn" id="quizNext">Continue ▸</button>
+  </div>
+</div>
+
+<!-- ACHIEVEMENTS -->
+<div id="achievementsPanel">
+  <div class="ach-card">
+    <h2>🏅 Achievements</h2>
+    <div class="ach-list" id="achList"></div>
+    <button class="ach-close-btn" id="achClose">Close</button>
+  </div>
+</div>
+
+<!-- ACH TOAST -->
+<div id="achToast">
+  <div class="ach-toast-badge" id="achToastBadge">🏅</div>
+  <div class="ach-toast-text"><div class="ach-toast-label">Achievement Unlocked!</div><div class="ach-toast-name" id="achToastName">First Landing</div></div>
+</div>
+
+<!-- NAME MODAL -->
+<div id="nameModal">
+  <div class="name-card">
+    <h2>🧑‍🚀 Explorer Name</h2>
+    <p>Enter your name for the mission certificate</p>
+    <input type="text" class="name-input" id="nameInput" placeholder="e.g. Alex Explorer" maxlength="24" autocomplete="off">
+    <button class="name-btn" id="nameSubmit">Begin Mission 🚀</button>
+  </div>
+</div>
+
+<!-- FINAL MISSION -->
+<div id="finalMission">
+  <div class="final-content">
+    <h2 class="final-title">🏆 Final Mission</h2>
+    <p class="final-subtitle">Answer 5 rapid-fire questions to restore the AI Universe!</p>
+    <div class="final-progress" id="finalProgress"></div>
+    <div class="final-q" id="finalQ"></div>
+    <div class="final-options" id="finalOptions"></div>
+  </div>
+</div>
+
+<!-- CELEBRATION -->
+<div id="celebrationScreen">
+  <div class="celebration-content">
+    <div class="celeb-trophy">🏆</div>
+    <h2 class="celeb-title">AI Explorer Score</h2>
+    <p class="celeb-subtitle">Universe Restored! You are now a Master AI Explorer</p>
+    <div class="score-card">
+      <div class="score-stars" id="scoreStars">⭐⭐⭐⭐⭐</div>
+      <div class="score-stats">
+        <div class="stat-item"><div class="stat-label">XP Earned</div><div class="stat-value gold" id="scoreXP">0</div></div>
+        <div class="stat-item"><div class="stat-label">Time</div><div class="stat-value blue" id="scoreTime">0m 0s</div></div>
+        <div class="stat-item"><div class="stat-label">Planets</div><div class="stat-value green" id="scorePlanets">7/7</div></div>
+        <div class="stat-item"><div class="stat-label">Accuracy</div><div class="stat-value purple" id="scoreAccuracy">0%</div></div>
+      </div>
+      <div class="rank-badge" id="rankBadge">Rank: AI Commander</div>
+    </div>
+    <div class="share-section">
+      <button class="share-btn share-whatsapp" id="shareWhatsApp">📲 Share on WhatsApp</button>
+      <button class="share-btn share-linkedin" id="shareLinkedIn">💼 Share on LinkedIn</button>
+      <button class="share-btn share-copy" id="shareCopy">🔗 Copy Link</button>
+      <button class="share-btn share-cert" id="shareCert">📜 View Certificate</button>
+      <button class="share-btn share-play" id="sharePlayAgain">🔄 Play Again</button>
+    </div>
+    <p class="challenge-text">Challenge your friends to beat your score!</p>
+  </div>
+</div>
+
+<!-- CERTIFICATE -->
+<div id="certModal">
+  <div class="cert-container">
+    <canvas id="certCanvas" width="800" height="1000"></canvas>
+    <div class="cert-buttons">
+      <button class="cert-btn cert-download" id="certDownload">⬇ Download PNG</button>
+      <button class="cert-btn cert-close" id="certClose">Close</button>
+    </div>
+  </div>
+</div>
+
+<!-- EASTER EGG -->
+<div id="easterEggToast">
+  <div class="ee-icon">✨</div>
+  <div class="ee-label">Did You Know?</div>
+  <div class="ee-fact" id="eeFact"></div>
+</div>
+
+<script>
+(function(){
+'use strict';
+
+/* ===== STORAGE ===== */
+const Storage={
+  KEY:'ai_universe_v2',
+  save(d){try{localStorage.setItem(this.KEY,JSON.stringify(d))}catch(e){}},
+  load(){try{var d=localStorage.getItem(this.KEY);return d?JSON.parse(d):null}catch(e){return null}},
+  clear(){try{localStorage.removeItem(this.KEY)}catch(e){}}
+};
+
+/* ===== PLANET DATA ===== */
+const PLANETS=[
+  {id:'ai',icon:'☀',name:'Artificial Intelligence',short:'AI',color:'#ffd54f',orbit:0,
+   desc:'Artificial Intelligence is the broad field of creating machines that can think, learn, and make decisions like humans. It encompasses everything from simple rule-based systems to advanced neural networks that power today\'s most impressive technologies.',
+   examples:['Siri & Alexa','Recommendation Systems','Spam Filters','Game AI (Chess bots)','Self-driving cars'],
+   facts:'<strong>Did you know?</strong> The term "Artificial Intelligence" was first coined by <strong>John McCarthy</strong> in 1956 at the Dartmouth Conference, considered the birthplace of AI as a field.'},
+  {id:'ml',icon:'📊',name:'Machine Learning',short:'ML',color:'#4fc3f7',orbit:1,
+   desc:'Machine Learning is a subset of AI that enables computers to learn from data without being explicitly programmed. Instead of writing rules, we feed data to algorithms that discover patterns and make predictions on their own.',
+   examples:['Netflix recommendations','Email spam detection','Price prediction','Fraud detection','Image classification'],
+   facts:'<strong>Did you know?</strong> The term "Machine Learning" was coined by <strong>Arthur Samuel</strong> in 1959. He built a checkers-playing program that improved itself by playing — one of the earliest examples of self-learning!'},
+  {id:'dl',icon:'🧠',name:'Deep Learning',short:'DL',color:'#b388ff',orbit:2,
+   desc:'Deep Learning is a specialized branch of ML that uses multi-layered neural networks (inspired by the human brain) to learn complex patterns. "Deep" refers to the many hidden layers between input and output.',
+   examples:['Face recognition','Voice assistants','Medical image diagnosis','Autonomous driving vision','Real-time translation'],
+   facts:'<strong>Did you know?</strong> Deep Learning\'s breakthrough came in <strong>2012</strong> when AlexNet won the ImageNet competition by a huge margin, using GPUs to train a deep neural network.'},
+  {id:'gen',icon:'✨',name:'Generative AI',short:'GenAI',color:'#ff80ab',orbit:3,
+   desc:'Generative AI can create entirely new content — text, images, music, video, and code — by learning patterns from massive datasets. Unlike traditional AI that classifies or predicts, Generative AI produces original outputs.',
+   examples:['ChatGPT (text)','DALL·E (images)','Suno (music)','Runway (video)','GitHub Copilot (code)'],
+   facts:'<strong>Did you know?</strong> <strong>GANs</strong> (Generative Adversarial Networks) were introduced by Ian Goodfellow in 2014. Two neural networks compete — like an art forger vs. an art detective!'},
+  {id:'llm',icon:'💬',name:'Large Language Models',short:'LLM',color:'#66bb6a',orbit:4,
+   desc:'Large Language Models are AI systems trained on billions of text tokens to understand and generate human-like language. They use the Transformer architecture and can write essays, answer questions, translate, and code.',
+   examples:['GPT-4','Claude','Gemini','LLaMA','Mistral'],
+   facts:'<strong>Did you know?</strong> The <strong>Transformer architecture</strong>, introduced in 2017 in "Attention Is All You Need", revolutionized NLP. GPT = Generative Pre-trained Transformer!'},
+  {id:'rag',icon:'🔍',name:'Retrieval-Augmented Generation',short:'RAG',color:'#ff7043',orbit:5,
+   desc:'RAG combines an LLM with an external knowledge base. Instead of relying only on memorized training data, RAG retrieves relevant documents and feeds them to the LLM, producing accurate, up-to-date, source-grounded answers.',
+   examples:['AI chatbots with company docs','Legal research assistants','Customer support with knowledge base','Medical Q&A with journals','Real-time news summarization'],
+   facts:'<strong>Did you know?</strong> RAG was introduced by <strong>Facebook AI Research</strong> in 2020. It solved the "hallucination" problem — when LLMs confidently make things up!'},
+  {id:'agent',icon:'🤖',name:'Agentic AI',short:'Agent',color:'#ab47bc',orbit:6,
+   desc:'Agentic AI goes beyond answering questions — it can plan, make decisions, use tools, and take actions autonomously to achieve goals. It chains multiple steps, browses the web, calls APIs, writes code, and adapts — like a digital worker.',
+   examples:['AutoGPT','Devin (AI software engineer)','AI research agents','Automated workflow builders','Multi-agent collaboration'],
+   facts:'<strong>Did you know?</strong> Agentic AI is the <strong>frontier of AI in 2024-2025</strong>. Unlike chatbots, agents proactively plan, break tasks into sub-tasks, use tools, and self-correct — moving AI from "assistant" to "autonomous worker"!'}
+];
+
+const HIDDEN_PLANETS=[
+  {id:'agi',icon:'🌑',name:'AGI',desc:'Artificial General Intelligence — AI that matches human intelligence across all tasks. The holy grail of AI research.'},
+  {id:'quantum',icon:'🌑',name:'Quantum AI',desc:'AI powered by quantum computing — solving problems impossible for classical computers.'},
+  {id:'robotics',icon:'🌑',name:'Robotics AI',desc:'AI embodied in physical robots that interact with the real world — from manufacturing to healthcare.'}
+];
+
+const EASTER_EGG_FACTS=[
+  'The first chatbot was ELIZA, created in 1966 at MIT. It simulated a psychotherapist!',
+  'AI trains on over 45 terabytes of data daily across the world.',
+  'The global AI market is projected to reach $1.8 trillion by 2030.',
+  'A single GPT-4 training run costs approximately $100 million in compute.',
+  'AI can now generate images in under 1 second that would take a human artist hours.',
+  'The word "robot" comes from the Czech word "robota" meaning forced labor.',
+  'Neural networks were inspired by neurons in the human brain — 86 billion of them!',
+  'AI has been used to discover new antibiotics and predict protein structures.',
+  'The Turing Test, proposed by Alan Turing in 1950, tests if a machine can fool humans.',
+  'Your smartphone uses AI dozens of times per day — from face unlock to predictive text.'
+];
+
+/* ===== QUIZ DATA ===== */
+const QUIZZES={
+  ai:{question:'Artificial Intelligence is the field of creating machines that can…?',options:[
+    {text:'Think, learn, and make decisions like humans',correct:true},
+    {text:'Only perform mathematical calculations',correct:false},
+    {text:'Connect computers to the internet',correct:false},
+    {text:'Store large amounts of data',correct:false}]},
+  ml:{question:'Machine Learning is a subset of…?',options:[
+    {text:'Blockchain',correct:false},
+    {text:'Artificial Intelligence',correct:true},
+    {text:'Networking',correct:false},
+    {text:'Cloud Computing',correct:false}]},
+  dl:{question:'"Deep" in Deep Learning refers to…?',options:[
+    {text:'The depth of the ocean data',correct:false},
+    {text:'Many hidden layers in a neural network',correct:true},
+    {text:'Deep knowledge of programming',correct:false},
+    {text:'The size of the training data',correct:false}]},
+  gen:{question:'Generative AI is unique because it can…?',options:[
+    {text:'Only classify existing images',correct:false},
+    {text:'Store data more efficiently',correct:false},
+    {text:'Create entirely new content (text, images, music)',correct:true},
+    {text:'Connect to faster networks',correct:false}]},
+  llm:{question:'What architecture powers modern Large Language Models?',options:[
+    {text:'Random Forest',correct:false},
+    {text:'Support Vector Machine',correct:false},
+    {text:'Transformer',correct:true},
+    {text:'Decision Tree',correct:false}]},
+  rag:{question:'RAG solves which major LLM problem?',options:[
+    {text:'Slow training speed',correct:false},
+    {text:'Hallucination — making up facts',correct:true},
+    {text:'High cost of GPUs',correct:false},
+    {text:'Limited language support',correct:false}]},
+  agent:{question:'What makes Agentic AI different from a chatbot?',options:[
+    {text:'It can plan, use tools, and take actions autonomously',correct:true},
+    {text:'It responds faster than chatbots',correct:false},
+    {text:'It uses more training data',correct:false},
+    {text:'It has a better user interface',correct:false}]}
+};
+
+const FINAL_QUESTIONS=[
+  {q:'Which is the correct order of AI evolution?',options:['AI → ML → DL → GenAI → LLM → RAG → Agentic AI','AI → DL → ML → RAG → GenAI → LLM → Agentic AI','ML → AI → LLM → DL → GenAI → RAG → Agentic AI','GenAI → AI → ML → DL → LLM → RAG → Agentic AI'],correct:0},
+  {q:'What does RAG add to an LLM?',options:['Faster response speed','External knowledge retrieval for accuracy','Better grammar','Multi-language support'],correct:1},
+  {q:'Which AI concept uses multi-layered neural networks?',options:['Machine Learning','Deep Learning','Retrieval-Augmented Generation','Blockchain'],correct:1},
+  {q:'Who coined the term "Artificial Intelligence"?',options:['Alan Turing','John McCarthy','Arthur Samuel','Ian Goodfellow'],correct:1},
+  {q:'What is the key capability of Agentic AI?',options:['Generating images','Answering questions','Autonomous planning and action','Storing data'],correct:2}
+];
+
+const ACHIEVEMENTS=[
+  {id:'first_landing',name:'First Landing',desc:'Visit your first planet',icon:'🚀'},
+  {id:'explorer',name:'Explorer',desc:'Complete 3 planets',icon:'🧭'},
+  {id:'knowledge_seeker',name:'Knowledge Seeker',desc:'Complete 5 planets',icon:'📚'},
+  {id:'ai_master',name:'AI Master',desc:'Complete all 7 planets',icon:'🧙'},
+  {id:'universe_complete',name:'Universe Complete',desc:'Finish the final mission',icon:'🌌'}
+];
+
+/* ===== GAME STATE ===== */
+const STATE={
+  screen:'intro',playerName:'',xp:0,completedPlanets:[],currentPlanet:null,
+  achievements:[],startTime:0,endTime:0,correctAnswers:0,totalAnswers:0,
+  finalCorrect:0,musicOn:false,paused:false,visitedPlanets:[]
+};
+
+/* ===== AUDIO ===== */
+const AudioSys={
+  ctx:null,
+  init(){if(!this.ctx){try{this.ctx=new(window.AudioContext||window.webkitAudioContext)()}catch(e){}}},
+  tone(f,d,t,v){if(!this.ctx||!STATE.musicOn)return;try{var o=this.ctx.createOscillator(),g=this.ctx.createGain();o.type=t||'sine';o.frequency.value=f;g.gain.setValueAtTime(0,this.ctx.currentTime);g.gain.linearRampToValueAtTime(v||.12,this.ctx.currentTime+.01);g.gain.exponentialRampToValueAtTime(.001,this.ctx.currentTime+d);o.connect(g);g.connect(this.ctx.destination);o.start();o.stop(this.ctx.currentTime+d)}catch(e){}},
+  hover(){this.tone(800,.08,'sine',.05)},
+  click(){this.tone(500,.1,'triangle',.08)},
+  correct(){this.tone(523,.1,'sine',.1);setTimeout(()=>this.tone(659,.1,'sine',.1),80);setTimeout(()=>this.tone(784,.15,'sine',.1),160)},
+  wrong(){this.tone(300,.15,'sawtooth',.06);setTimeout(()=>this.tone(200,.2,'sawtooth',.05),100)},
+  unlock(){this.tone(440,.1,'sine',.08);setTimeout(()=>this.tone(554,.1,'sine',.08),80);setTimeout(()=>this.tone(659,.1,'sine',.08),160);setTimeout(()=>this.tone(880,.2,'sine',.1),240)},
+  complete(){[523,587,659,698,784,880,1047].forEach((n,i)=>setTimeout(()=>this.tone(n,.15,'sine',.1),i*80))},
+  missionComplete(){[392,523,659,784,1047].forEach((n,i)=>setTimeout(()=>this.tone(n,.3,'sine',.12),i*150))},
+  bgMusic:null,
+  startMusic(){if(!this.ctx||!STATE.musicOn||this.bgMusic)return;var notes=[220,277,330,392,440],i=0;this.bgMusic=setInterval(()=>{if(!STATE.musicOn){this.stopMusic();return}this.tone(notes[i%notes.length],.8,'sine',.03);i++},600)},
+  stopMusic(){if(this.bgMusic){clearInterval(this.bgMusic);this.bgMusic=null}}
+};
+
+/* ===== STARFIELD ===== */
+const Starfield={
+  canvas:null,ctx:null,stars:[],meteors:[],w:0,h:0,
+  init(){this.canvas=document.getElementById('starfield');this.ctx=this.canvas.getContext('2d');this.resize();this.createStars();window.addEventListener('resize',()=>{this.resize();this.createStars()});this.animate()},
+  resize(){this.w=this.canvas.width=window.innerWidth;this.h=this.canvas.height=window.innerHeight},
+  createStars(){this.stars=[];var c=Math.min(140,Math.floor(this.w*this.h/8000));for(var i=0;i<c;i++)this.stars.push({x:Math.random()*this.w,y:Math.random()*this.h,r:Math.random()*1.5+.3,opacity:Math.random()*.8+.2,ts:Math.random()*.02+.005,tp:Math.random()*Math.PI*2})},
+  spawnMeteor(){if(Math.random()<.003&&this.meteors.length<3)this.meteors.push({x:Math.random()*this.w+100,y:Math.random()*this.h*.5,vx:-3-Math.random()*4,vy:2+Math.random()*3,life:1,len:60+Math.random()*40})},
+  animate(){
+    var c=this.ctx;c.clearRect(0,0,this.w,this.h);
+    for(var s of this.stars){s.tp+=s.ts;var tw=(Math.sin(s.tp)+1)/2;c.beginPath();c.arc(s.x,s.y,s.r,0,Math.PI*2);c.fillStyle='rgba(255,255,255,'+(s.opacity*tw)+')';c.fill();if(s.r>1){c.beginPath();c.arc(s.x,s.y,s.r*2,0,Math.PI*2);c.fillStyle='rgba(255,255,255,'+(s.opacity*tw*.15)+')';c.fill()}}
+    this.spawnMeteor();
+    for(var i=this.meteors.length-1;i>=0;i--){var m=this.meteors[i];m.x+=m.vx;m.y+=m.vy;m.life-=.008;if(m.life<=0||m.x<-100||m.y>this.h+100){this.meteors.splice(i,1);continue}var g=c.createLinearGradient(m.x,m.y,m.x-m.vx*m.len/5,m.y-m.vy*m.len/5);g.addColorStop(0,'rgba(255,255,255,'+m.life+')');g.addColorStop(1,'rgba(255,255,255,0)');c.strokeStyle=g;c.lineWidth=2;c.beginPath();c.moveTo(m.x,m.y);c.lineTo(m.x-m.vx*m.len/5,m.y-m.vy*m.len/5);c.stroke();c.beginPath();c.arc(m.x,m.y,2,0,Math.PI*2);c.fillStyle='rgba(255,255,255,'+m.life+')';c.fill()}
+    requestAnimationFrame(()=>this.animate())
+  }
+};
+
+/* ===== FX (confetti/fireworks) ===== */
+const FX={
+  canvas:null,ctx:null,particles:[],w:0,h:0,_raf:null,
+  init(){this.canvas=document.getElementById('fxCanvas');this.ctx=this.canvas.getContext('2d');this.resize();window.addEventListener('resize',()=>this.resize())},
+  resize(){this.w=this.canvas.width=window.innerWidth;this.h=this.canvas.height=window.innerHeight},
+  confetti(){var colors=['#4fc3f7','#b388ff','#ff80ab','#ffd54f','#69f0ae','#ff7043'];for(var i=0;i<80;i++)this.particles.push({x:this.w/2,y:this.h/2,vx:(Math.random()-.5)*12,vy:-Math.random()*15-5,g:.3,life:1,color:colors[Math.floor(Math.random()*colors.length)],size:Math.random()*6+3,rot:Math.random()*Math.PI*2,vr:(Math.random()-.5)*.3,type:'confetti'});if(!this._raf)this.animate()},
+  fireworks(){var colors=['#4fc3f7','#b388ff','#ff80ab','#ffd54f','#69f0ae'];for(var b=0;b<5;b++)setTimeout(()=>{var cx=Math.random()*this.w*.8+this.w*.1,cy=Math.random()*this.h*.5+this.h*.1,color=colors[Math.floor(Math.random()*colors.length)];for(var i=0;i<40;i++){var a=(Math.PI*2/40)*i,sp=3+Math.random()*4;this.particles.push({x:cx,y:cy,vx:Math.cos(a)*sp,vy:Math.sin(a)*sp,g:.05,life:1,color,size:3,rot:0,vr:0,type:'firework'})}},b*400);if(!this._raf)this.animate()},
+  animate(){var c=this.ctx;c.clearRect(0,0,this.w,this.h);for(var i=this.particles.length-1;i>=0;i--){var p=this.particles[i];p.x+=p.vx;p.y+=p.vy;p.vy+=p.g;p.life-=.012;p.rot+=p.vr;if(p.life<=0){this.particles.splice(i,1);continue}c.save();c.globalAlpha=p.life;c.translate(p.x,p.y);c.rotate(p.rot);if(p.type==='confetti'){c.fillStyle=p.color;c.fillRect(-p.size/2,-p.size/2,p.size,p.size*.6)}else{c.fillStyle=p.color;c.shadowBlur=10;c.shadowColor=p.color;c.beginPath();c.arc(0,0,p.size,0,Math.PI*2);c.fill()}c.restore()}if(this.particles.length>0){this._raf=requestAnimationFrame(()=>this.animate())}else{this._raf=null;c.clearRect(0,0,this.w,this.h)}}
+};
+
+/* ===== UNIVERSE ===== */
+const Universe={
+  orbitSystem:null,
+  build(){
+    this.orbitSystem=document.getElementById('orbitSystem');
+    this.orbitSystem.innerHTML='';
+    var isMobile=window.innerWidth<600;
+    var baseR=isMobile?50:65;
+    var gap=isMobile?34:44;
+
+    // SUN
+    var sw=document.createElement('div');
+    sw.className='sun-wrapper';
+    sw.innerHTML='<div class="sun"></div><div class="sun-label">☀ AI</div>';
+    this._attachTap(sw,()=>this.onPlanetClick('ai'));
+    this.orbitSystem.appendChild(sw);
+
+    // PLANETS 1-6
+    for(var i=1;i<PLANETS.length;i++){
+      var p=PLANETS[i];
+      var r=baseR+gap*i;
+      var completed=STATE.completedPlanets.includes(p.id);
+      var unlocked=this.isPlanetUnlocked(p.id);
+      var isCurrent=!completed&&unlocked&&this.isNextPlanet(p.id);
+
+      // Orbit ring
+      var ring=document.createElement('div');
+      ring.className='orbit-ring';
+      ring.style.width=ring.style.height=(r*2)+'px';
+      this.orbitSystem.appendChild(ring);
+
+      // Wrapper
+      var pw=document.createElement('div');
+      pw.className='planet-wrapper';
+      pw.style.width=pw.style.height=(r*2)+'px';
+      pw.style.marginLeft=pw.style.marginTop=(-r)+'px';
+
+      // Orbit (slow rotation)
+      var orbit=document.createElement('div');
+      orbit.className='planet-orbit';
+      orbit.style.setProperty('--orbit-r',r+'px');
+      orbit.style.animationDuration=(40+i*8)+'s'; // SLOW orbits
+      orbit.style.animationDelay='-'+(Math.random()*15)+'s';
+      if(STATE.paused)orbit.style.animationPlayState='paused';
+
+      // Hitbox (larger touch target)
+      var hb=document.createElement('div');
+      hb.className='planet-hitbox p-'+p.id+(isCurrent?' current':'');
+      hb.innerHTML='<div class="planet-sphere'+(!unlocked?' locked':'')+'">'+p.icon+'</div><div class="planet-label">'+p.short+'</div>'+(completed?'<div class="planet-complete-badge">✓</div>':'')+(!unlocked?'<div class="planet-lock">🔒</div>':'');
+      this._attachTap(hb,(e)=>{if(e)e.stopPropagation();this.onPlanetClick(p.id)});
+
+      orbit.appendChild(hb);
+      pw.appendChild(orbit);
+      this.orbitSystem.appendChild(pw);
+    }
+
+    // Hidden planets
+    var hR=baseR+gap*7;
+    for(var j=0;j<HIDDEN_PLANETS.length;j++){
+      var hp=HIDDEN_PLANETS[j];
+      var hr=hR+j*28;
+      var hring=document.createElement('div');
+      hring.className='orbit-ring';
+      hring.style.width=hring.style.height=(hr*2)+'px';
+      hring.style.borderStyle='dashed';
+      hring.style.opacity='.03';
+      this.orbitSystem.appendChild(hring);
+
+      var hpw=document.createElement('div');
+      hpw.className='planet-wrapper';
+      hpw.style.width=hpw.style.height=(hr*2)+'px';
+      hpw.style.marginLeft=hpw.style.marginTop=(-hr)+'px';
+      var hOrbit=document.createElement('div');
+      hOrbit.className='planet-orbit';
+      hOrbit.style.setProperty('--orbit-r',hr+'px');
+      hOrbit.style.animationDuration=(50+j*8)+'s';
+      var hHb=document.createElement('div');
+      hHb.className='locked-planet';
+      hHb.innerHTML='<div class="locked-sphere">'+hp.icon+'</div><div class="locked-label">'+hp.name+'</div>';
+      this._attachTap(hHb,()=>{AudioSys.click();showEasterEgg(hp.desc)});
+      hOrbit.appendChild(hHb);
+      hpw.appendChild(hOrbit);
+      this.orbitSystem.appendChild(hpw);
+    }
+
+    this.buildMissionBar();
+  },
+
+  // Unified tap handler (works for both touch and click)
+  _attachTap(el,handler){
+    var triggered=false;
+    el.addEventListener('touchstart',function(e){
+      e.preventDefault();
+      e.stopPropagation();
+      triggered=true;
+      handler(e);
+      setTimeout(()=>{triggered=false},300);
+    },{passive:false});
+    el.addEventListener('click',function(e){
+      if(triggered){e.preventDefault();return}
+      e.stopPropagation();
+      handler(e);
+    });
+  },
+
+  isPlanetUnlocked(id){
+    var idx=PLANETS.findIndex(p=>p.id===id);
+    if(idx===0)return true; // Sun always unlocked
+    // Planet N unlocks when planet N-1 is completed
+    var prev=PLANETS[idx-1];
+    return STATE.completedPlanets.includes(prev.id);
+  },
+
+  isNextPlanet(id){
+    var idx=PLANETS.findIndex(p=>p.id===id);
+    if(idx===0)return STATE.completedPlanets.length===0;
+    var prev=PLANETS[idx-1];
+    return STATE.completedPlanets.includes(prev.id)&&!STATE.completedPlanets.includes(id);
+  },
+
+  getNextPlanetId(){
+    for(var i=0;i<PLANETS.length;i++){
+      if(!STATE.completedPlanets.includes(PLANETS[i].id)){
+        if(i===0||STATE.completedPlanets.includes(PLANETS[i-1].id))
+          return PLANETS[i].id;
+      }
+    }
+    return null;
+  },
+
+  onPlanetClick(id){
+    AudioSys.init();
+    AudioSys.click();
+    var p=PLANETS.find(x=>x.id===id);
+    if(!p)return;
+    if(!this.isPlanetUnlocked(id)){
+      showEasterEgg('🔒 This planet is locked! Complete the previous planet to unlock it.');
+      return;
+    }
+    // Track visited
+    if(!STATE.visitedPlanets.includes(id)){
+      STATE.visitedPlanets.push(id);
+      if(STATE.visitedPlanets.length===1)checkAchievements();
+    }
+    pauseOrbits(true);
+    showPlanetPopup(p);
+  },
+
+  buildMissionBar(){
+    var scroll=document.getElementById('missionScroll');
+    scroll.innerHTML='';
+    var nextId=this.getNextPlanetId();
+
+    PLANETS.forEach((p,i)=>{
+      var completed=STATE.completedPlanets.includes(p.id);
+      var unlocked=this.isPlanetUnlocked(p.id);
+      var isCurrent=p.id===nextId;
+      var cls='mission-item';
+      if(completed)cls+=' completed';
+      else if(!unlocked)cls+=' locked';
+      if(isCurrent)cls+=' current';
+
+      var item=document.createElement('div');
+      item.className=cls;
+
+      // Icon background
+      var iconBg='background:radial-gradient(circle at 35% 35%,';
+      if(p.id==='ai')iconBg+='#fff9c4,#ffd54f,#ff9800)';
+      else if(p.id==='ml')iconBg+='#b3e5fc,#4fc3f7,#0277bd)';
+      else if(p.id==='dl')iconBg+='#d1c4e9,#b388ff,#5e35b1)';
+      else if(p.id==='gen')iconBg+='#f8bbd0,#ff80ab,#c2185b)';
+      else if(p.id==='llm')iconBg+='#a5d6a7,#66bb6a,#2e7d32)';
+      else if(p.id==='rag')iconBg+='#ffccbc,#ff7043,#bf360c)';
+      else if(p.id==='agent')iconBg+='#ce93d8,#ab47bc,#6a1b9a)';
+
+      item.innerHTML='<div class="mission-item-icon" style="'+iconBg+'">'+p.icon+'</div><div class="mission-item-name">'+p.short+'</div>';
+      this._attachTap(item,()=>this.onPlanetClick(p.id));
+      scroll.appendChild(item);
+
+      // Add connector between items (except after last)
+      if(i<PLANETS.length-1){
+        var conn=document.createElement('div');
+        conn.style.cssText='flex-shrink:0;width:16px;height:2px;background:rgba(255,255,255,.08);margin-top:22px;align-self:center';
+        scroll.appendChild(conn);
+      }
+    });
+
+    // Update hint
+    var hint=document.getElementById('missionHint');
+    if(nextId){
+      var np=PLANETS.find(x=>x.id===nextId);
+      hint.textContent='👆 Tap '+np.name+' to continue';
+    }else{
+      hint.textContent='🏆 All planets complete! Ready for final mission';
+    }
+  }
+};
+
+/* ===== UI FUNCTIONS ===== */
+function showScreen(id){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  var el=document.getElementById(id);
+  if(el)el.classList.add('active');
+}
+
+function pauseOrbits(pause){
+  STATE.paused=pause;
+  document.querySelectorAll('.planet-orbit').forEach(o=>{o.style.animationPlayState=pause?'paused':'running'});
+}
+
+function showPlanetPopup(planet){
+  document.getElementById('popupIcon').textContent=planet.icon;
+  document.getElementById('popupTitle').textContent=planet.name;
+  document.getElementById('popupSubtitle').textContent=planet.short+' · AI Concept';
+  document.getElementById('popupDesc').textContent=planet.desc;
+
+  var ex=document.getElementById('popupExamples');
+  ex.innerHTML='';
+  planet.examples.forEach((e,i)=>{var c=document.createElement('span');c.className='example-chip';c.textContent=e;c.style.animationDelay=(i*.08)+'s';ex.appendChild(c)});
+
+  document.getElementById('popupFacts').innerHTML=planet.facts;
+
+  var completed=STATE.completedPlanets.includes(planet.id);
+  var btn=document.getElementById('popupContinue');
+  if(completed){btn.textContent='✓ Completed — Close';btn.classList.add('locked')}
+  else{btn.textContent='Start Quiz 🧠';btn.classList.remove('locked')}
+
+  STATE.currentPlanet=planet;
+  document.getElementById('planetPopup').classList.add('show');
+}
+
+function hidePlanetPopup(){
+  document.getElementById('planetPopup').classList.remove('show');
+  if(!document.getElementById('quizModal').classList.contains('show'))pauseOrbits(false);
+}
+
+function showQuiz(planet){
+  var quiz=QUIZZES[planet.id];
+  if(!quiz)return;
+  document.getElementById('quizIcon').textContent=planet.icon;
+  document.getElementById('quizTitle').textContent=planet.name+' Quiz';
+  document.getElementById('quizQuestion').textContent=quiz.question;
+
+  var opts=document.getElementById('quizOptions');
+  opts.innerHTML='';
+  var letters=['A','B','C','D'];
+  quiz.options.forEach((opt,i)=>{
+    var div=document.createElement('div');
+    div.className='quiz-option';
+    div.innerHTML='<div class="opt-letter">'+letters[i]+'</div><span>'+opt.text+'</span>';
+    div.addEventListener('click',function(){
+      if(div.classList.contains('disabled'))return;
+      opts.querySelectorAll('.quiz-option').forEach(o=>o.classList.add('disabled'));
+      STATE.totalAnswers++;
+      if(opt.correct){
+        div.classList.add('correct');
+        AudioSys.correct();
+        STATE.correctAnswers++;
+        showQuizFeedback(true);
+        addXP(100);
+      }else{
+        div.classList.add('wrong');
+        AudioSys.wrong();
+        var ci=quiz.options.findIndex(o=>o.correct);
+        opts.querySelectorAll('.quiz-option')[ci].classList.add('correct');
+        showQuizFeedback(false);
+      }
+      document.getElementById('quizNext').classList.add('show');
+    });
+    opts.appendChild(div);
+  });
+
+  document.getElementById('quizFeedback').classList.remove('show','correct','wrong');
+  document.getElementById('quizNext').classList.remove('show');
+  document.getElementById('quizModal').classList.add('show');
+}
+
+function showQuizFeedback(correct){
+  var fb=document.getElementById('quizFeedback');
+  fb.textContent=correct?'✅ Correct! +100 XP':'❌ Not quite! The correct answer is highlighted.';
+  fb.classList.add('show',correct?'correct':'wrong');
+}
+
+function hideQuiz(){document.getElementById('quizModal').classList.remove('show')}
+
+function completePlanet(id){
+  if(!STATE.completedPlanets.includes(id)){
+    STATE.completedPlanets.push(id);
+    addXP(50);
+    AudioSys.unlock();
+    checkAchievements();
+    saveState();
+    updateHUD();
+    Universe.build(); // Rebuild to show completion & unlock next
+  }
+}
+
+function addXP(amt){STATE.xp+=amt;updateHUD();saveState()}
+
+function updateHUD(){
+  document.getElementById('hudXP').textContent=STATE.xp+' XP';
+  document.getElementById('hudProgress').textContent=STATE.completedPlanets.length+'/7';
+}
+
+function checkAchievements(){
+  var newly=[];
+  ACHIEVEMENTS.forEach(a=>{
+    if(STATE.achievements.includes(a.id))return;
+    var unlock=false;
+    if(a.id==='first_landing')unlock=STATE.visitedPlanets.length>=1||STATE.completedPlanets.length>=1;
+    if(a.id==='explorer')unlock=STATE.completedPlanets.length>=3;
+    if(a.id==='knowledge_seeker')unlock=STATE.completedPlanets.length>=5;
+    if(a.id==='ai_master')unlock=STATE.completedPlanets.length>=7;
+    if(a.id==='universe_complete')unlock=false;
+    if(unlock){STATE.achievements.push(a.id);newly.push(a)}
+  });
+  if(newly.length>0){newly.forEach((a,i)=>setTimeout(()=>showAchievementToast(a),i*1500));saveState()}
+}
+
+function showAchievementToast(ach){
+  var t=document.getElementById('achToast');
+  document.getElementById('achToastBadge').textContent=ach.icon;
+  document.getElementById('achToastName').textContent=ach.name;
+  t.classList.add('show');
+  AudioSys.unlock();
+  setTimeout(()=>t.classList.remove('show'),3000);
+}
+
+function showAchievementsPanel(){
+  var list=document.getElementById('achList');
+  list.innerHTML='';
+  ACHIEVEMENTS.forEach(a=>{
+    var unlocked=STATE.achievements.includes(a.id);
+    var item=document.createElement('div');
+    item.className='ach-item'+(unlocked?' unlocked':'');
+    item.innerHTML='<div class="ach-badge">'+a.icon+'</div><div class="ach-info"><div class="ach-name">'+a.name+'</div><div class="ach-desc">'+a.desc+'</div></div>';
+    list.appendChild(item);
+  });
+  document.getElementById('achievementsPanel').classList.add('show');
+}
+
+function showEasterEgg(fact){
+  var t=document.getElementById('easterEggToast');
+  document.getElementById('eeFact').textContent=fact;
+  t.classList.add('show');
+  clearTimeout(t._timer);
+  t._timer=setTimeout(()=>t.classList.remove('show'),4000);
+}
+
+/* ===== FINAL MISSION ===== */
+var finalIdx=0;
+function startFinalMission(){
+  finalIdx=0;STATE.finalCorrect=0;
+  document.getElementById('finalMission').classList.add('show');
+  var prog=document.getElementById('finalProgress');
+  prog.innerHTML='';
+  for(var i=0;i<5;i++){var d=document.createElement('div');d.className='final-dot'+(i===0?' active':'');prog.appendChild(d)}
+  showFinalQuestion();
+}
+
+function showFinalQuestion(){
+  var q=FINAL_QUESTIONS[finalIdx];
+  document.getElementById('finalQ').textContent=q.q;
+  var opts=document.getElementById('finalOptions');
+  opts.innerHTML='';
+  q.options.forEach((opt,i)=>{
+    var div=document.createElement('div');
+    div.className='final-opt';
+    div.textContent=opt;
+    div.addEventListener('click',function(){
+      opts.querySelectorAll('.final-opt').forEach(o=>o.style.pointerEvents='none');
+      if(i===q.correct){div.classList.add('correct');STATE.finalCorrect++;AudioSys.correct()}
+      else{div.classList.add('wrong');opts.querySelectorAll('.final-opt')[q.correct].classList.add('correct');AudioSys.wrong()}
+      var dots=document.querySelectorAll('.final-dot');
+      dots[finalIdx].classList.remove('active');
+      dots[finalIdx].classList.add(i===q.correct?'correct':'wrong');
+      finalIdx++;
+      setTimeout(()=>{
+        if(finalIdx<5){dots[finalIdx].classList.add('active');showFinalQuestion()}
+        else completeGame();
+      },1200);
+    });
+    opts.appendChild(div);
+  });
+}
+
+function completeGame(){
+  STATE.endTime=Date.now();
+  if(!STATE.achievements.includes('universe_complete')){
+    STATE.achievements.push('universe_complete');
+    var ach=ACHIEVEMENTS.find(a=>a.id==='universe_complete');
+    setTimeout(()=>showAchievementToast(ach),500);
+  }
+  var timeMs=STATE.endTime-STATE.startTime;
+  var mins=Math.floor(timeMs/60000),secs=Math.floor((timeMs%60000)/1000);
+  var accuracy=STATE.totalAnswers>0?Math.round((STATE.correctAnswers/STATE.totalAnswers)*100):0;
+  var finalBonus=STATE.finalCorrect*50;
+  STATE.xp+=finalBonus;
+  var totalCorrect=STATE.correctAnswers+STATE.finalCorrect;
+  var totalPossible=7+5;
+  var pct=totalCorrect/totalPossible;
+  var stars=1;
+  if(pct>=.95)stars=5;else if(pct>=.8)stars=4;else if(pct>=.6)stars=3;else if(pct>=.4)stars=2;
+  var rank='AI Cadet';
+  if(stars>=5)rank='AI Commander';else if(stars>=4)rank='AI Captain';else if(stars>=3)rank='AI Navigator';else if(stars>=2)rank='AI Pilot';
+
+  document.getElementById('finalMission').classList.remove('show');
+  document.getElementById('celebrationScreen').classList.add('show');
+  document.getElementById('scoreStars').textContent='⭐'.repeat(stars)+'☆'.repeat(5-stars);
+  document.getElementById('scoreXP').textContent=STATE.xp.toLocaleString();
+  document.getElementById('scoreTime').textContent=mins+'m '+secs+'s';
+  document.getElementById('scorePlanets').textContent=STATE.completedPlanets.length+'/7';
+  document.getElementById('scoreAccuracy').textContent=accuracy+'%';
+  document.getElementById('rankBadge').textContent='🏆 Rank: '+rank;
+
+  AudioSys.missionComplete();
+  FX.confetti();
+  setTimeout(()=>FX.fireworks(),500);
+  setTimeout(()=>FX.fireworks(),1500);
+  saveState();
+}
+
+/* ===== CERTIFICATE ===== */
+function generateCertificate(){
+  var canvas=document.getElementById('certCanvas'),ctx=canvas.getContext('2d'),W=800,H=1000;
+  var grad=ctx.createLinearGradient(0,0,0,H);
+  grad.addColorStop(0,'#0a0a2e');grad.addColorStop(.5,'#1a0a3e');grad.addColorStop(1,'#050518');
+  ctx.fillStyle=grad;ctx.fillRect(0,0,W,H);
+  ctx.strokeStyle='#4fc3f7';ctx.lineWidth=3;ctx.strokeRect(30,30,W-60,H-60);
+  ctx.strokeStyle='rgba(179,136,255,.4)';ctx.lineWidth=1;ctx.strokeRect(40,40,W-80,H-80);
+  for(var i=0;i<60;i++){ctx.beginPath();ctx.arc(Math.random()*W,Math.random()*H,Math.random()*2,0,Math.PI*2);ctx.fillStyle='rgba(255,255,255,'+(Math.random()*.5+.1)+')';ctx.fill()}
+  ctx.textAlign='center';ctx.font='bold 42px sans-serif';
+  var tg=ctx.createLinearGradient(200,150,600,150);
+  tg.addColorStop(0,'#4fc3f7');tg.addColorStop(.5,'#b388ff');tg.addColorStop(1,'#ff80ab');
+  ctx.fillStyle=tg;ctx.fillText('🏆 AI Universe Explorer',W/2,160);
+  ctx.font='18px sans-serif';ctx.fillStyle='rgba(255,255,255,.5)';ctx.fillText('CERTIFICATE OF COMPLETION',W/2,200);
+  ctx.strokeStyle='rgba(79,195,247,.3)';ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(W/2-120,220);ctx.lineTo(W/2+120,220);ctx.stroke();
+  ctx.font='16px sans-serif';ctx.fillStyle='rgba(255,255,255,.5)';ctx.fillText('This certificate is proudly presented to',W/2,270);
+  ctx.font='bold 36px sans-serif';ctx.fillStyle='#fff';ctx.fillText(STATE.playerName||'AI Explorer',W/2,320);
+  ctx.font='15px sans-serif';ctx.fillStyle='rgba(255,255,255,.6)';ctx.fillText('For successfully completing the journey from',W/2,380);
+  ctx.font='bold 18px sans-serif';ctx.fillStyle='#4fc3f7';ctx.fillText('Artificial Intelligence → Agentic AI',W/2,410);
+  ctx.font='15px sans-serif';ctx.fillStyle='rgba(255,255,255,.6)';ctx.fillText('and restoring knowledge across the AI Universe',W/2,438);
+  ctx.fillStyle='rgba(255,255,255,.05)';ctx.fillRect(150,480,500,160);
+  ctx.strokeStyle='rgba(255,255,255,.1)';ctx.strokeRect(150,480,500,160);
+  var timeMs=STATE.endTime-STATE.startTime,mins=Math.floor(timeMs/60000),secs=Math.floor((timeMs%60000)/1000);
+  var accuracy=STATE.totalAnswers>0?Math.round((STATE.correctAnswers/STATE.totalAnswers)*100):0;
+  ctx.font='13px sans-serif';ctx.fillStyle='rgba(255,255,255,.4)';ctx.textAlign='left';
+  ctx.fillText('⭐ XP EARNED',190,515);ctx.fillText('⏱ TIME',390,515);ctx.fillText('🎯 ACCURACY',570,515);
+  ctx.font='bold 24px sans-serif';ctx.fillStyle='#ffd54f';ctx.fillText(STATE.xp.toLocaleString(),190,545);
+  ctx.fillStyle='#4fc3f7';ctx.fillText(mins+'m '+secs+'s',390,545);
+  ctx.fillStyle='#b388ff';ctx.fillText(accuracy+'%',570,545);
+  ctx.font='13px sans-serif';ctx.fillStyle='rgba(255,255,255,.4)';ctx.fillText('🪐 PLANETS',190,590);ctx.fillText('🏅 ACHIEVEMENTS',390,590);
+  ctx.font='bold 22px sans-serif';ctx.fillStyle='#69f0ae';ctx.fillText(STATE.completedPlanets.length+'/7',190,620);
+  ctx.fillStyle='#ff80ab';ctx.fillText(STATE.achievements.length+'/5',390,620);
+  var totalCorrect=STATE.correctAnswers+STATE.finalCorrect,totalPossible=7+5,pct=totalCorrect/totalPossible;
+  var stars=1,rank='AI Cadet';
+  if(pct>=.95){stars=5;rank='AI Commander'}else if(pct>=.8){stars=4;rank='AI Captain'}else if(pct>=.6){stars=3;rank='AI Navigator'}else if(pct>=.4){stars=2;rank='AI Pilot'}
+  ctx.font='bold 20px sans-serif';ctx.fillStyle='#ffd54f';ctx.textAlign='center';
+  ctx.fillText('⭐'.repeat(stars)+'☆'.repeat(5-stars),W/2,700);
+  ctx.font='bold 22px sans-serif';
+  var rg=ctx.createLinearGradient(W/2-100,720,W/2+100,720);
+  rg.addColorStop(0,'#ffd54f');rg.addColorStop(1,'#ff80ab');
+  ctx.fillStyle=rg;ctx.fillText('Rank: '+rank,W/2,730);
+  var today=new Date(),dateStr=today.toLocaleDateString('en-US',{year:'numeric',month:'long',day:'numeric'});
+  ctx.font='14px sans-serif';ctx.fillStyle='rgba(255,255,255,.4)';ctx.fillText('Completed on '+dateStr,W/2,800);
+  ctx.strokeStyle='rgba(255,255,255,.2)';ctx.beginPath();ctx.moveTo(W/2-100,860);ctx.lineTo(W/2+100,860);ctx.stroke();
+  ctx.font='12px sans-serif';ctx.fillStyle='rgba(255,255,255,.3)';ctx.fillText('AI Universe Explorer · Mission Control',W/2,880);
+  ctx.font='40px sans-serif';ctx.fillText('🌌',W/2,930);
+}
+
+function downloadCertificate(){
+  var canvas=document.getElementById('certCanvas'),link=document.createElement('a');
+  link.download='AI_Universe_Explorer_Certificate.png';
+  link.href=canvas.toDataURL('image/png');
+  link.click();AudioSys.click();
+}
+
+/* ===== SHARE ===== */
+function shareWhatsApp(){
+  var text='🏆 I just completed the AI Universe Explorer mission!\n\n⭐ XP: '+STATE.xp.toLocaleString()+'\n🪐 Planets: '+STATE.completedPlanets.length+'/7\n\nCan you beat my score? 🚀';
+  var url=window.location.href;
+  window.open('https://wa.me/?text='+encodeURIComponent(text+' '+url),'_blank');
+  AudioSys.click();
+}
+function shareLinkedIn(){
+  var url=window.location.href;
+  window.open('https://www.linkedin.com/sharing/share-offsite/?url='+encodeURIComponent(url),'_blank');
+  AudioSys.click();
+}
+function copyLink(){
+  var url=window.location.href;
+  if(navigator.clipboard){navigator.clipboard.writeText(url).then(()=>showEasterEgg('🔗 Link copied to clipboard!'))}
+  else{var ta=document.createElement('textarea');ta.value=url;document.body.appendChild(ta);ta.select();try{document.execCommand('copy');showEasterEgg('🔗 Link copied!')}catch(e){}document.body.removeChild(ta)}
+  AudioSys.click();
+}
+
+/* ===== SAVE/LOAD ===== */
+function saveState(){
+  Storage.save({playerName:STATE.playerName,xp:STATE.xp,completedPlanets:STATE.completedPlanets,achievements:STATE.achievements,startTime:STATE.startTime,correctAnswers:STATE.correctAnswers,totalAnswers:STATE.totalAnswers,visitedPlanets:STATE.visitedPlanets});
+}
+function loadState(){
+  var d=Storage.load();
+  if(d){
+    STATE.playerName=d.playerName||'';STATE.xp=d.xp||0;
+    STATE.completedPlanets=d.completedPlanets||[];STATE.achievements=d.achievements||[];
+    STATE.correctAnswers=d.correctAnswers||0;STATE.totalAnswers=d.totalAnswers||0;
+    STATE.visitedPlanets=d.visitedPlanets||[];
+    if(d.startTime)STATE.startTime=d.startTime;
+    return true;
+  }
+  return false;
+}
+function resetState(){
+  Storage.clear();
+  STATE.playerName='';STATE.xp=0;STATE.completedPlanets=[];STATE.achievements=[];
+  STATE.correctAnswers=0;STATE.totalAnswers=0;STATE.finalCorrect=0;
+  STATE.startTime=Date.now();STATE.endTime=0;STATE.visitedPlanets=[];
+}
+
+/* ===== GAME FLOW ===== */
+function startGame(){
+  AudioSys.init();AudioSys.click();
+  var hasSave=loadState();
+  if(hasSave&&STATE.completedPlanets.length>0){
+    document.getElementById('nameModal').classList.remove('show');
+    showScreen('universeView');
+    document.getElementById('hud').classList.add('show');
+    document.getElementById('missionBar').classList.add('show');
+    Universe.build();updateHUD();
+    if(!STATE.startTime)STATE.startTime=Date.now();
+  }else{
+    STATE.startTime=Date.now();
+    document.getElementById('introScreen').classList.remove('active');
+    document.getElementById('nameModal').classList.add('show');
+    setTimeout(()=>document.getElementById('nameInput').focus(),300);
+  }
+}
+
+function beginMission(){
+  var name=document.getElementById('nameInput').value.trim()||'AI Explorer';
+  STATE.playerName=name;
+  document.getElementById('nameModal').classList.remove('show');
+  showScreen('universeView');
+  document.getElementById('hud').classList.add('show');
+  document.getElementById('missionBar').classList.add('show');
+  Universe.build();updateHUD();saveState();
+  AudioSys.unlock();
+}
+
+/* ===== EVENTS ===== */
+function setupEvents(){
+  // Start
+  document.getElementById('startBtn').addEventListener('click',startGame);
+
+  // Name
+  document.getElementById('nameSubmit').addEventListener('click',beginMission);
+  document.getElementById('nameInput').addEventListener('keydown',e=>{if(e.key==='Enter')beginMission()});
+
+  // Popup
+  document.getElementById('popupClose').addEventListener('click',()=>{AudioSys.click();hidePlanetPopup()});
+  document.getElementById('popupContinue').addEventListener('click',()=>{
+    AudioSys.click();
+    var completed=STATE.completedPlanets.includes(STATE.currentPlanet.id);
+    if(completed){hidePlanetPopup()}
+    else{hidePlanetPopup();setTimeout(()=>showQuiz(STATE.currentPlanet),300)}
+  });
+
+  // Quiz
+  document.getElementById('quizNext').addEventListener('click',()=>{
+    AudioSys.click();hideQuiz();
+    if(STATE.currentPlanet){
+      completePlanet(STATE.currentPlanet.id);
+      if(STATE.completedPlanets.length>=7){
+        setTimeout(()=>{pauseOrbits(true);startFinalMission()},800);
+      }
+    }
+    pauseOrbits(false);
+  });
+
+  // Achievements
+  document.getElementById('achBtn').addEventListener('click',()=>{AudioSys.click();showAchievementsPanel()});
+  document.getElementById('achClose').addEventListener('click',()=>{AudioSys.click();document.getElementById('achievementsPanel').classList.remove('show')});
+
+  // Music
+  document.getElementById('musicBtn').addEventListener('click',()=>{
+    AudioSys.init();STATE.musicOn=!STATE.musicOn;
+    document.getElementById('musicBtn').textContent=STATE.musicOn?'🎵':'🔇';
+    if(STATE.musicOn)AudioSys.startMusic();else AudioSys.stopMusic();
+    if(STATE.musicOn)AudioSys.click();
+  });
+
+  // Share
+  document.getElementById('shareWhatsApp').addEventListener('click',shareWhatsApp);
+  document.getElementById('shareLinkedIn').addEventListener('click',shareLinkedIn);
+  document.getElementById('shareCopy').addEventListener('click',copyLink);
+  document.getElementById('shareCert').addEventListener('click',()=>{AudioSys.click();generateCertificate();document.getElementById('certModal').classList.add('show')});
+  document.getElementById('certClose').addEventListener('click',()=>{AudioSys.click();document.getElementById('certModal').classList.remove('show')});
+  document.getElementById('certDownload').addEventListener('click',downloadCertificate);
+
+  // Play again
+  document.getElementById('sharePlayAgain').addEventListener('click',()=>{
+    AudioSys.click();resetState();
+    document.getElementById('celebrationScreen').classList.remove('show');
+    document.getElementById('hud').classList.remove('show');
+    document.getElementById('missionBar').classList.remove('show');
+    showScreen('introScreen');Universe.build();updateHUD();
+  });
+
+  // Easter egg: tap on starfield area (only when no modal is open)
+  document.addEventListener('click',e=>{
+    // Only trigger if clicking on the body/starfield directly (not on planets or UI)
+    if(e.target.id==='starfield'||e.target===document.body){
+      if(STATE.screen!=='intro'&&document.getElementById('universeView').classList.contains('active')){
+        if(!document.querySelector('#planetPopup.show,#quizModal.show,#achievementsPanel.show,#nameModal.show,#finalMission.show,#celebrationScreen.show,#certModal.show')){
+          var fact=EASTER_EGG_FACTS[Math.floor(Math.random()*EASTER_EGG_FACTS.length)];
+          showEasterEgg(fact);AudioSys.hover();
+        }
+      }
+    }
+  });
+
+  // Prevent zoom
+  document.addEventListener('dblclick',e=>e.preventDefault());
+  document.addEventListener('contextmenu',e=>e.preventDefault());
+
+  // Handle resize - rebuild universe
+  var resizeTimer;
+  window.addEventListener('resize',()=>{
+    clearTimeout(resizeTimer);
+    resizeTimer=setTimeout(()=>{
+      if(document.getElementById('universeView').classList.contains('active'))Universe.build();
+    },300);
+  });
+}
+
+/* ===== INIT ===== */
+function init(){
+  Starfield.init();FX.init();setupEvents();loadState();
+  setTimeout(()=>{
+    document.getElementById('loadingScreen').classList.add('hide');
+    setTimeout(()=>document.getElementById('loadingScreen').style.display='none',500);
+  },1000);
+}
+
+if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init);
+else init();
+
+})();
+</script>
+<script defer src="https://static.cloudflareinsights.com/beacon.min.js/v4513226cdae34746b4dedf0b4dfa099e1781791509496" integrity="sha512-ZE9pZaUXND66v380QUtch/5sE9tPFh2zg45pR2PB0CVkCtOREv2AJKkSidISWkysEuQ0EH8faUU5du78bx87UQ==" data-cf-beacon='{"version":"2024.11.0","token":"4edd5f8ec12a48cfa682ab8261b80a79","server_timing":{"name":{"cfCacheStatus":true,"cfEdge":true,"cfExtPri":true,"cfL4":true,"cfOrigin":true,"cfSpeedBrain":true},"location_startswith":null}}' crossorigin="anonymous"></script>
+</body>
+</html>
